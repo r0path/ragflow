@@ -248,6 +248,9 @@ def rm():
                 return get_data_error_result(message="File or Folder not found!")
             if not file.tenant_id:
                 return get_data_error_result(message="Tenant not found!")
+            # Verify current user has permission to delete this file
+            if file.tenant_id != current_user.id:
+                return get_data_error_result(message="Permission denied - you cannot delete files owned by other users")
             if file.source_type == FileSource.KNOWLEDGEBASE:
                 continue
 
