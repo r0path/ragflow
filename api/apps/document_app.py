@@ -544,6 +544,22 @@ def parse():
         if not is_valid_url(url):
             return get_json_result(
                 data=False, message='The URL format is invalid', code=settings.RetCode.ARGUMENT_ERROR)
+
+        # SSRF protection: disallow private, loopback, or link-local addresses
+        try:
+            from urllib.parse import urlparse
+            import socket
+            import ipaddress
+            parsed = urlparse(url)
+            host = parsed.hostname
+            ip_addr = socket.gethostbyname(host)
+            ip_obj = ipaddress.ip_address(ip_addr)
+            if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local:
+                return get_json_result(
+                    data=False, message='URL not allowed', code=settings.RetCode.ARGUMENT_ERROR)
+        except Exception:
+            return get_json_result(
+                data=False, message='Invalid URL hostname', code=settings.RetCode.ARGUMENT_ERROR)
         download_path = os.path.join(get_project_base_directory(), "logs/downloads")
         os.makedirs(download_path, exist_ok=True)
         from seleniumwire.webdriver import Chrome, ChromeOptions
