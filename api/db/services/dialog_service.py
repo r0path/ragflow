@@ -541,6 +541,9 @@ def rewrite(tenant_id, llm_id, question):
 
 
 def keyword_extraction(chat_mdl, content, topn=3):
+    # sanitize content to prevent prompt injection
+    safe_content = content.replace('```', '')
+    safe_content = re.sub(r'[\r\n]+', ' ', safe_content)
     prompt = f"""
 Role: You're a text analyzer. 
 Task: extract the most important keywords/phrases of a given piece of text content.
@@ -549,13 +552,10 @@ Requirements:
   - The keywords MUST be in language of the given piece of text content.
   - The keywords are delimited by ENGLISH COMMA.
   - Keywords ONLY in output.
-
-### Text Content 
-{content}
-
 """
     msg = [
         {"role": "system", "content": prompt},
+        {"role": "user", "content": safe_content},
         {"role": "user", "content": "Output: "}
     ]
     _, msg = message_fit_in(msg, chat_mdl.max_length)
